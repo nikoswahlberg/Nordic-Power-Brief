@@ -1,0 +1,2 @@
+date,zone,pnl_eur,charged_mwh,discharged_mwh,cycles,avg_buy_price,avg_sell_price,price_avg,price_min,price_max,negative_intervals
+2026-11-11,FI,434.78,3.5,3.5,1.75,111.59,264.56,224.29,44.4,345.64,0
