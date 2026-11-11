@@ -1,3 +1,6 @@
+# Under construction 🚧
+
+
 # Nordic Power Brief
 
 [![Daily brief](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml)
