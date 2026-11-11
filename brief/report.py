@@ -50,6 +50,18 @@ def _history_chart(log: pd.DataFrame) -> str:
     return fig.to_html(include_plotlyjs=False, full_html=False)
 
 
+def _cumulative_chart(last30: pd.DataFrame) -> str:
+    """Cumulative P&L over the 30-day window, starting from zero, so the end point equals the 'Last 30 days' KPI."""
+    fig = make_subplots()
+    fig.add_scatter(x=last30["date"], y=last30["pnl_eur"].cumsum(), mode="lines+markers", fill="tozeroy",
+                    name="Cumulative P&L, €", line={"color": "#2a9d8f"},
+                    hovertemplate="%{x}<br>%{y:,.0f} €<extra></extra>")
+    fig.update_layout(height=300, margin={"l": 40, "r": 40, "t": 10, "b": 30}, showlegend=False,
+                      separators=", ", template="simple_white")
+    fig.update_yaxes(title_text="€", rangemode="tozero")
+    return fig.to_html(include_plotlyjs=False, full_html=False)
+
+
 def render(day: date, zone: str, sched: pd.DataFrame, summary: dict, log: pd.DataFrame, bat: Battery) -> None:
     log = log[log["zone"] == zone].sort_values("date")
     last30 = log.tail(30)
@@ -100,6 +112,8 @@ max {cap} cycles/day · optimal day-ahead schedule</p>
 {_schedule_chart(sched)}
 <h2>P&amp;L history</h2>
 {_history_chart(log)}
+<h2>Cumulative P&amp;L, last 30 days</h2>
+{_cumulative_chart(last30)}
 <h2>Last 14 days</h2>
 {table}
 <p class="note">Day-ahead prices are published the afternoon before delivery, so this is the best possible day-ahead
