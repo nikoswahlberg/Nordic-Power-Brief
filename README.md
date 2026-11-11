@@ -1,13 +1,13 @@
 # Nordic Power Brief
 
-[![Daily brief](https://github.com/OWNER/nordic-power-brief/actions/workflows/daily.yml/badge.svg)](https://github.com/OWNER/nordic-power-brief/actions/workflows/daily.yml)
-[![CI](https://github.com/OWNER/nordic-power-brief/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/nordic-power-brief/actions/workflows/ci.yml)
+[![Daily brief](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml)
+[![CI](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml)
 
 An automated morning brief for the Finnish power market. Every day at about 08:00 Helsinki time a GitHub Actions job
 pulls the day-ahead prices from ENTSO-E, validates them, works out how a grid battery should have traded them, and
 publishes a report.
 
-**Live report:** https://OWNER.github.io/nordic-power-brief/
+**Live report:** https://nikoswahlberg.github.io/Nordic-Power-Brief/
 
 ## Module 1: battery arbitrage P&L
 
