@@ -2,7 +2,11 @@ name: Daily brief
 
 on:
   schedule:
-    - cron: "30 5 * * *"
+    # GitHub cron is UTC only. Helsinki 06:00 is 04:00 UTC in winter (UTC+2) and 03:00 UTC in summer (UTC+3),
+    # so run at both times and let the "Check whether to run" step pick the right one. The later run also
+    # acts as a retry if GitHub skips or delays the earlier one.
+    - cron: "0 3 * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -17,16 +21,35 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - name: Check whether to run
+        id: gate
+        run: |
+          today=$(TZ=Europe/Helsinki date +%F)
+          hour=$(TZ=Europe/Helsinki date +%-H)
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            run=true
+          elif [ "$hour" -lt 6 ]; then
+            run=false; echo "It is $hour:xx in Helsinki, before 06:00. Skipping; the next scheduled run will build the brief."
+          elif grep -q "^$today,FI," data/battery_pnl.csv 2>/dev/null; then
+            run=false; echo "The brief for $today is already built. Skipping."
+          else
+            run=true
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v6
+        if: steps.gate.outputs.run == 'true'
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
+      - if: steps.gate.outputs.run == 'true'
+        run: pip install -r requirements.txt
       - name: Generate daily brief
+        if: steps.gate.outputs.run == 'true'
         env:
           ENTSOE_API_TOKEN: ${{ secrets.ENTSOE_API_TOKEN }}
         run: python -m brief.run
       - name: Commit updated report
+        if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

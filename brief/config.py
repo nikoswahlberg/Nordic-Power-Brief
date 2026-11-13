@@ -10,11 +10,9 @@ DOCS_DIR = ROOT / "docs"
 
 LOCAL_TZ = ZoneInfo("Europe/Helsinki")
 
-# ENTSO-E EIC codes for bidding zones
+# ENTSO-E EIC code per bidding zone. The brief covers Finland only.
 BIDDING_ZONES = {
     "FI": "10YFI-1--------U",
-    "SE1": "10Y1001A1001A44P",
-    "EE": "10Y1001A1001A39I",
 }
 
 
@@ -32,4 +30,5 @@ class Battery:
 
 
 DEFAULT_ZONE = "FI"
+HISTORY_DAYS = 30  # days kept filled in the P&L log and shown in the cumulative chart
 DEFAULT_BATTERY = Battery()

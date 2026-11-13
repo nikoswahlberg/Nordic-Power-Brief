@@ -6,7 +6,7 @@
 [![Daily brief](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml)
 [![CI](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml)
 
-An automated morning brief for the Finnish power market. Every day at about 08:00 Helsinki time a GitHub Actions job
+An automated morning brief for the Finnish power market. Every day at about 06:00 Helsinki time a GitHub Actions job
 pulls the day-ahead prices from ENTSO-E, validates them, works out how a grid battery should have traded them, and
 publishes a report.
 
@@ -41,7 +41,20 @@ ENTSO-E API ─► parse (15-min, A03 gap-fill) ─► validate ─► optimise 
 * **Validation as alerting.** Missing intervals, duplicates or prices outside the SDAC limits (−500 to 4 000 €/MWh)
   make the job fail, and GitHub emails the failure.
 
-### Battery settings
+#### The report
+
+[The live report](https://nikoswahlberg.github.io/Nordic-Power-Brief/) shows, top to bottom:
+
+1. A short plain-language introduction to the brief and the example battery
+2. Key figures for today: profit, cycles, captured spread, last-30-day total and its yearly pace
+3. Price statistics: lowest, average and highest price of the day
+4. Today's day-ahead price with the optimal charge and discharge schedule
+5. Cumulative profit over the last 30 days
+6. A table of the last 14 days
+
+The brief covers the Finnish bidding zone (FI) only.
+
+## Battery settings
 
 Change them in [`brief/config.py`](brief/config.py):
 
@@ -63,8 +76,8 @@ python -m brief.run --demo          # synthetic prices, no token needed, writes 
 open demo/docs/index.html
 
 export ENTSOE_API_TOKEN=...         # real data
-python -m brief.run --backfill 2026-10-01 2026-11-10
-python -m brief.run                 # today
+python -m brief.run                 # today, plus any missing days of the last 30
+python -m brief.run --backfill 2026-10-01 2026-11-10   # a longer history
 pytest -q && ruff check .
 ```
 
@@ -74,14 +87,14 @@ pytest -q && ruff check .
    "Restful API access" in the subject line.
 2. Add it as a repository secret: Settings → Secrets and variables → Actions → `ENTSOE_API_TOKEN`.
 3. Enable Pages: Settings → Pages → Deploy from branch → `main` / `docs`.
-4. Run the backfill once locally and commit `data/`, so the history chart starts full.
-5. Actions → *Daily brief* → *Run workflow* to test it. After that it runs on the schedule (05:30 UTC).
+4. Nothing to backfill by hand: each run fetches any of the last 30 days missing from `data/`.
+5. Actions → *Daily brief* → *Run workflow* to test it. After that it runs on the schedule: 06:00 Helsinki time, summer and winter (cron at 03:00 and 04:00 UTC; the run before 06:00 local time skips itself).
 
 ## Repository layout
 
 ```
 brief/
-  config.py     battery and bidding zone settings
+  config.py     battery settings, bidding zone (FI) and history length
   entsoe.py     API client and XML parser
   validate.py   data checks
   battery.py    optimiser
@@ -101,6 +114,5 @@ tests/
 
 ## Roadmap
 
-* FI–SE1 / FI–EE spread and price-decoupling section
 * Price-anomaly flags (negative-price hours, spikes against last week)
 * Reserve market prices from Fingrid open data

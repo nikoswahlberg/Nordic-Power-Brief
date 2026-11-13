@@ -1,6 +1,6 @@
 """Daily entry point.
 
-    python -m brief.run                       # today's delivery day (Helsinki)
+    python -m brief.run                       # today's delivery day (Helsinki), plus any missing days of the last 30
     python -m brief.run --date 2026-11-10     # one specific day
     python -m brief.run --backfill 2026-10-01 2026-11-10
     python -m brief.run --demo                # synthetic prices, no API token, writes to demo/
@@ -42,6 +42,25 @@ def _days(a: date, b: date):
         a += timedelta(days=1)
 
 
+def missing_days(log: pd.DataFrame, zone: str, start: date, end: date) -> list[date]:
+    """Days in [start, end] that have no row in the P&L log."""
+    have = set(log.loc[log["zone"] == zone, "date"]) if len(log) else set()
+    return [d for d in _days(start, end) if d.isoformat() not in have]
+
+
+def fill_history(day: date, zone: str) -> None:
+    """Fetch any day of the history window before `day` that is not logged yet (first run, missed runs).
+
+    A day that cannot be fetched only raises a warning: the run still fails loudly if `day` itself fails.
+    """
+    start = day - timedelta(days=config.HISTORY_DAYS - 1)
+    for d in missing_days(store.load_pnl(), zone, start, day - timedelta(days=1)):
+        try:
+            process_day(d, zone)
+        except Exception as exc:  # noqa: BLE001 - one bad past day must not block today's brief
+            print(f"::warning::Could not fill {d}: {exc}")
+
+
 def synthetic_prices(day: date, seed: int) -> pd.Series:
     """Rough Nordic winter shape: morning and evening peaks, windy nights, occasional negatives."""
     start, end = entsoe.delivery_window_utc(day)
@@ -57,20 +76,20 @@ def synthetic_prices(day: date, seed: int) -> pd.Series:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--zone", default=DEFAULT_ZONE, choices=list(config.BIDDING_ZONES))
     ap.add_argument("--date", type=date.fromisoformat)
     ap.add_argument("--backfill", nargs=2, type=date.fromisoformat, metavar=("START", "END"))
     ap.add_argument("--demo", action="store_true")
     args = ap.parse_args()
+    zone = DEFAULT_ZONE
 
     today = datetime.now(LOCAL_TZ).date()
 
     if args.demo:
         config.DATA_DIR = config.ROOT / "demo" / "data"
         config.DOCS_DIR = config.ROOT / "demo" / "docs"
-        for i, d in enumerate(_days(today - timedelta(days=29), today)):
-            process_day(d, args.zone, synthetic_prices(d, seed=i))
-        build_report(today, args.zone)
+        for i, d in enumerate(_days(today - timedelta(days=config.HISTORY_DAYS - 1), today)):
+            process_day(d, zone, synthetic_prices(d, seed=i))
+        build_report(today, zone)
         print(f"Demo report: {config.DOCS_DIR / 'index.html'}")
         return
 
@@ -78,7 +97,7 @@ def main() -> None:
         failed = []
         for d in _days(*args.backfill):
             try:
-                process_day(d, args.zone)
+                process_day(d, zone)
             except Exception as exc:  # keep going, report at the end
                 failed.append(f"{d}: {exc}")
         if failed:
@@ -86,9 +105,10 @@ def main() -> None:
         report_day = args.backfill[1]
     else:
         report_day = args.date or today
-        process_day(report_day, args.zone)
+        fill_history(report_day, zone)
+        process_day(report_day, zone)
 
-    build_report(report_day, args.zone)
+    build_report(report_day, zone)
 
 
 if __name__ == "__main__":
