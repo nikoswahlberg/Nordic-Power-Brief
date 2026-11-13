@@ -10,6 +10,10 @@ from plotly.subplots import make_subplots
 from . import config
 from .config import LOCAL_TZ, Battery
 
+# Charts fill the content column edge to edge, like the text, cards and table. Plotly's automargin then makes
+# just enough room inside that width for axis labels and titles.
+CHART_MARGIN = {"l": 0, "r": 0, "t": 10, "b": 0}
+
 
 def _fmt(x, decimals=0, unit=""):
     """European number format: space thousands separator, comma decimals."""
@@ -48,11 +52,13 @@ def _schedule_chart(sched: pd.DataFrame) -> str:
                     opacity=0.5, secondary_y=True)
     fig.add_scatter(x=local.index, y=local["price_eur_mwh"], line_shape="hv", name="Day-ahead price, €/MWh",
                     line={"color": "#264653", "width": 2}, secondary_y=False)
-    fig.update_layout(height=380, margin={"l": 40, "r": 40, "t": 10, "b": 30},
+    fig.update_layout(height=380, margin=CHART_MARGIN,
                       legend={"orientation": "h", "y": -0.15}, separators=", ", template="simple_white",
                       bargap=0, barmode="overlay")
-    fig.update_yaxes(title_text="€/MWh", secondary_y=False)
-    fig.update_yaxes(title_text="MW", secondary_y=True, range=[-2 * p_max, 2 * p_max], dtick=p_max, showgrid=False)
+    fig.update_yaxes(title_text="€/MWh", secondary_y=False, automargin=True)
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(title_text="MW", secondary_y=True, range=[-2 * p_max, 2 * p_max], dtick=p_max, showgrid=False,
+                     automargin=True)
     return fig.to_html(include_plotlyjs="cdn", full_html=False)
 
 
@@ -61,10 +67,11 @@ def _cumulative_chart(last30: pd.DataFrame) -> str:
     fig = make_subplots()
     fig.add_scatter(x=last30["date"], y=last30["pnl_eur"].cumsum(), mode="lines+markers", fill="tozeroy",
                     name="Cumulative P&L, €", line={"color": "#2a9d8f"},
-                    hovertemplate="%{x}<br>%{y:,.0f} €<extra></extra>")
-    fig.update_layout(height=300, margin={"l": 40, "r": 40, "t": 10, "b": 30}, showlegend=False,
+                    cliponaxis=False, hovertemplate="%{x}<br>%{y:,.0f} €<extra></extra>")
+    fig.update_layout(height=300, margin=CHART_MARGIN, showlegend=False,
                       separators=", ", template="simple_white")
-    fig.update_yaxes(title_text="€", rangemode="tozero")
+    fig.update_yaxes(title_text="€", rangemode="tozero", automargin=True)
+    fig.update_xaxes(automargin=True)
     return fig.to_html(include_plotlyjs=False, full_html=False)
 
 
@@ -104,10 +111,10 @@ def render(day: date, zone: str, sched: pd.DataFrame, summary: dict, log: pd.Dat
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Daily brief: battery arbitrage in Finland – {day}</title>
 <style>
- body {{ font-family: -apple-system, system-ui, sans-serif; max-width: 1000px; margin: 2rem auto;
+ body {{ font-family: -apple-system, system-ui, sans-serif; max-width: 860px; margin: 2rem auto;
         padding: 0 1rem; color: #1d2b36; }}
  h1 {{ margin-bottom: .2rem; }} .sub {{ color: #6b7a86; margin-top: 0; }}
- .intro {{ line-height: 1.5; max-width: 70ch; }}
+ .intro {{ line-height: 1.5; }}
  .kpis {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .8rem; margin: 1.5rem 0; }}
  .kpi {{ background: #f4f6f7; border-radius: 8px; padding: .8rem 1rem; }}
  .kpi .v {{ font-size: 1.35rem; font-weight: 600; }} .kpi .l {{ font-size: .8rem; color: #6b7a86; }}
