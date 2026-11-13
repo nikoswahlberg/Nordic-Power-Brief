@@ -6,9 +6,10 @@
 [![Daily brief](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/daily.yml)
 [![CI](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml/badge.svg)](https://github.com/nikoswahlberg/Nordic-Power-Brief/actions/workflows/ci.yml)
 
-An automated morning brief for the Finnish power market. Every day at about 06:00 Helsinki time a GitHub Actions job
-pulls the day-ahead prices from ENTSO-E, validates them, works out how a grid battery should have traded them, and
-publishes a report.
+An automated morning brief for the Finnish power market. Every day at 06:00 Helsinki time a GitHub Actions job
+fetches today's day-ahead electricity prices from ENTSO-E, checks them, works out the most a grid battery could earn
+by charging when power is cheap and selling when it is expensive, and publishes the result as a web page. No server,
+no database: the job, the data log and the page all live in this repository.
 
 **Live report:** https://nikoswahlberg.github.io/Nordic-Power-Brief/
 
@@ -106,7 +107,7 @@ brief/
   run.py        CLI / daily entry point
 data/           battery_pnl.csv + per-day schedules (committed by the bot)
 docs/           index.html (GitHub Pages)
-tests/
+tests/          optimiser, parser and history-fill tests
 ```
 
 ## Limitations
@@ -119,5 +120,17 @@ tests/
 
 ## Roadmap
 
+Next:
+
+* Realistic benchmark: compare the best possible result with a simple rule (for example "charge in the cheapest
+  2 hours, sell in the dearest 2") and show what share of the maximum it captures
+* Price context from Fingrid open data: wind power and consumption, to explain high- and low-profit days
 * Price-anomaly flags (negative-price hours, spikes against last week)
-* Reserve market prices from Fingrid open data
+* Longer view: monthly totals and a one-year backfill
+
+Later:
+
+* Reserve market revenue (FCR, aFRR, mFRR) from Fingrid open data
+* Grid fees and electricity tax
+* Battery size comparison (1-, 2- and 4-hour batteries)
+* Morning summary by email or Slack, linking to the page
