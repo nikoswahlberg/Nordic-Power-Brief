@@ -52,6 +52,9 @@ ENTSO-E API ─► parse (15-min, A03 gap-fill) ─► validate ─► optimise 
 5. Cumulative profit over the last 30 days
 6. A table of the last 14 days
 
+If the page shows a day other than today after 07:00 Helsinki time, a red banner at the top says the brief is out
+of date, so a failed or late run is visible on the page itself.
+
 The brief covers the Finnish bidding zone (FI) only.
 
 ## Battery settings
@@ -70,7 +73,7 @@ Change them in [`brief/config.py`](brief/config.py):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+pip install -r requirements.txt -r requirements-dev.txt   # exact versions; upgrade on purpose, then run the tests
 
 python -m brief.run --demo          # synthetic prices, no token needed, writes to demo/
 open demo/docs/index.html
@@ -111,6 +114,8 @@ tests/
 * Day-ahead only: no FCR/aFRR/mFRR reserve revenue, which in practice makes up most Finnish BESS income.
 * Full-power steps only: the battery is either at full power or idle in each interval.
 * Excludes grid tariffs, electricity tax and imbalance costs.
+* Each day is optimised on its own: the battery starts and ends every day empty, so trades across midnight are
+  not counted. On 15 Oct – 13 Nov 2026 optimising across midnight would have added 0.9 % (43 € in 30 days).
 
 ## Roadmap
 

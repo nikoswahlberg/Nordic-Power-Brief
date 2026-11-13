@@ -122,7 +122,25 @@ def render(day: date, zone: str, sched: pd.DataFrame, summary: dict, log: pd.Dat
  .tbl th, .tbl td {{ padding: .35rem .6rem; text-align: right; border-bottom: 1px solid #e3e7ea; }}
  .tbl th:first-child, .tbl td:first-child {{ text-align: left; }}
  .note {{ font-size: .8rem; color: #6b7a86; }}
+ .stale {{ background: #fdecea; border: 1px solid #e76f51; border-radius: 8px; padding: .8rem 1rem;
+           margin-bottom: 1rem; }}
 </style></head><body>
+<div id="stale" class="stale" role="alert" hidden><strong>This brief is out of date.</strong> It shows
+{day.day} {day.strftime("%B %Y")}, not today. The daily update runs at 06:00 Helsinki time, so today's run has failed
+or is late.</div>
+<script>
+// The page is static, so only the reader's browser knows today's date. Compare in Helsinki time and allow until
+// 07:00 for the 06:00 run to finish and publish.
+(function () {{
+  var now = new Date(), tz = "Europe/Helsinki", brief = "{day.isoformat()}";
+  var today = new Intl.DateTimeFormat("en-CA", {{timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit"}})
+    .format(now);
+  var hour = Number(new Intl.DateTimeFormat("en-GB", {{timeZone: tz, hour: "2-digit", hourCycle: "h23"}}).format(now));
+  var yesterday = new Date(Date.parse(today + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+  var stale = brief < today && !(brief === yesterday && hour < 7);
+  if (stale) document.getElementById("stale").hidden = false;
+}})();
+</script>
 <h1>Daily brief: battery arbitrage in Finland</h1>
 <p class="sub">{day.strftime("%A")} {day.day} {day.strftime("%B %Y")}</p>
 <p class="intro">{_intro(bat)}</p>
